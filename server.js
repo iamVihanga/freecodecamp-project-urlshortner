@@ -10,7 +10,7 @@ const dns = require("dns");
 const urlparser = require("url");
 
 // Basic Configuration
-const port = process.env.PORT || 3000;
+const port = 3000;
 
 // DB configuration
 mongoose.connect(
@@ -54,7 +54,10 @@ app.post("/api/shorturl", (req, res) => {
         res.json({ error: "invalid url" });
       } else {
         const url = new URL({ url: bodyUrl });
+
         url.save((err, data) => {
+          if (err) return res.json(err);
+
           res.json({ original_url: data.url, short_url: data.id });
         });
       }
