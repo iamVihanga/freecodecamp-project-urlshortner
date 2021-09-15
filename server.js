@@ -49,7 +49,7 @@ app.post("/api/shorturl", (req, res) => {
 
   let something = dns.lookup(
     urlparser.parse(bodyUrl).hostname,
-    (err, address) => {
+    (error, address) => {
       if (!address) {
         res.json({ error: "invalid url" });
       } else {
