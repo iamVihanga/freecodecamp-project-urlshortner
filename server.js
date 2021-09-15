@@ -47,19 +47,23 @@ app.get("/api/hello", function (req, res) {
 app.post("/api/shorturl", (req, res) => {
   let bodyUrl = req.body.url;
 
-  dns.lookup(urlparser.parse(bodyUrl).hostname, (err, address) => {
-    if (!address) {
-      res.json({ error: "invalid url" });
-    } else {
-      let url = new URL({ url: bodyUrl });
-      url.save((err, data) => {
-        if (!err) {
-          // res.json({ error: "Cannot Create" });
-          res.json({ original_url: data.url, short_url: data.id });
-        }
-      });
+  let something = dns.lookup(
+    urlparser.parse(bodyUrl).hostname,
+    (err, address) => {
+      if (!address) {
+        res.json({ error: "invalid url" });
+      } else {
+        let url = new URL({ url: bodyUrl });
+        url.save((err, data) => {
+          if (!err) {
+            res.json({ original_url: data.url, short_url: data.id });
+          }
+        });
+      }
     }
-  });
+  );
+
+  console.log("something : ", something);
 });
 
 app.get("/api/shorturl/:id", (req, res) => {
