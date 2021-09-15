@@ -53,13 +53,9 @@ app.post("/api/shorturl", (req, res) => {
       if (!address) {
         res.json({ error: "invalid url" });
       } else {
-        let url = new URL({ url: bodyUrl });
+        const url = new URL({ url: bodyUrl });
         url.save((err, data) => {
-          if (err) {
-            res.json({ error: err });
-          } else {
-            res.json({ original_url: data.url, short_url: data.id });
-          }
+          res.json({ original_url: data.url, short_url: data.id });
         });
       }
     }
