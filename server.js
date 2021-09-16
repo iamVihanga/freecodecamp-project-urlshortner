@@ -36,7 +36,7 @@ app.get("/", function (req, res) {
 // Create Schema & Model
 const urlSchema = new Schema({
   original_url: String,
-  short_url: String,
+  short_url: Number,
 });
 let URL = mongoose.model("Url", urlSchema);
 
@@ -55,7 +55,7 @@ app.post("/api/shorturl", (req, res) => {
         // Create new short url object
         const newUrl = new URL({
           original_url: parsedUrl.href,
-          short_url: new Date().getTime().toString(36),
+          short_url: parseInt(new Date().getTime()),
         });
 
         // Save new url object to DB
