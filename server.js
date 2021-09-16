@@ -36,7 +36,6 @@ app.get("/", function (req, res) {
 // Create Schema & Model
 const urlSchema = new Schema({
   original_url: String,
-  short_url: Number,
 });
 let URL = mongoose.model("Url", urlSchema);
 
@@ -47,39 +46,43 @@ app.get("/api/hello", function (req, res) {
 
 app.post("/api/shorturl", (req, res) => {
   if (mongoose.connection.readyState === 1) {
-    const lookUpUrl = req.body.url;
-    const parsedUrl = url.parse(lookUpUrl);
+    const bodyUrl = req.body.url;
+    const parsedUrl = url.parse(bodyUrl);
 
     dns.lookup(parsedUrl.hostname, (error, address, family) => {
-      if (!error && parsedUrl.hostname != null) {
-        // Create new short url object
-        const newUrl = new URL({
-          original_url: parsedUrl.href,
-          short_url: parseInt(new Date().getTime()),
-        });
+      console.log(parsedUrl.hostname);
+      console.log(error, address, family);
 
-        // Save new url object to DB
-        newUrl.save((err, data) => {
+      if (error === null && parsedUrl.hostname !== null) {
+        let urlObj = new URL({
+          original_url: parsedUrl.hostname,
+        });
+        urlObj.save((err, data) => {
           if (!err) {
             res.json({
               original_url: data.original_url,
-              short_url: data.short_url,
+              short_url: data._id,
             });
           }
         });
       } else {
-        res.json({
-          error: "invalid url",
-        });
+        res.json({ error: "invalid url" });
       }
     });
   }
 });
 
 app.get("/api/shorturl/:url", (req, res) => {
-  URL.findOne({ short_url: req.params.url })
-    .then((url) => res.redirect(301, url.original_url))
-    .catch((err) => res.json(err));
+  const id = req.params.url;
+
+  URL.findById(id, (err, data) => {
+    // console.log(data)
+    if (err) {
+      res.json({ error: "invalid url" });
+    } else {
+      res.redirect(`https://${data.original_url}/`);
+    }
+  });
 });
 
 app.listen(port, function () {
