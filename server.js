@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const dns = require("dns");
-const urlparser = require("url");
+const url = require("url");
 
 // Basic Configuration
 const port = 3000;
@@ -35,7 +35,8 @@ app.get("/", function (req, res) {
 
 // Create Schema & Model
 const urlSchema = new Schema({
-  url: String,
+  original_url: String,
+  short_url: String,
 });
 let URL = mongoose.model("Url", urlSchema);
 
@@ -45,38 +46,40 @@ app.get("/api/hello", function (req, res) {
 });
 
 app.post("/api/shorturl", (req, res) => {
-  let bodyUrl = req.body.url;
+  if (mongoose.connection.readyState === 1) {
+    const lookUpUrl = req.body.url;
+    const parsedUrl = url.parse(lookUpUrl);
 
-  let something = dns.lookup(
-    urlparser.parse(bodyUrl).hostname,
-    (error, address) => {
-      if (!address) {
-        res.json({ error: "invalid url" });
+    dns.lookup(parsedUrl.hostname, (error, address, family) => {
+      if (!error && parsedUrl.hostname != null) {
+        // Create new short url object
+        const newUrl = new URL({
+          original_url: parsedUrl.href,
+          short_url: new Date().getTime().toString(36),
+        });
+
+        // Save new url object to DB
+        newUrl.save((err, data) => {
+          if (!err) {
+            res.json({
+              original_url: data.original_url,
+              short_url: data.short_url,
+            });
+          }
+        });
       } else {
-        const url = new URL({ url: bodyUrl });
-
-        url.save((err, data) => {
-          if (err) return res.json(err);
-
-          res.json({ original_url: data.url, short_url: data.id });
+        res.json({
+          error: "invalid url",
         });
       }
-    }
-  );
-
-  console.log("something : ", something);
+    });
+  }
 });
 
-app.get("/api/shorturl/:id", (req, res) => {
-  let id = req.params.id;
-
-  URL.findById(id, (err, data) => {
-    if (!data) {
-      res.json({ error: "invalid url" });
-    } else {
-      res.redirect(data.url);
-    }
-  });
+app.get("/api/shorturl/:url", (req, res) => {
+  URL.findOne({ short_url: req.params.url })
+    .then((url) => res.redirect(301, url.original_url))
+    .catch((err) => res.json(err));
 });
 
 app.listen(port, function () {
